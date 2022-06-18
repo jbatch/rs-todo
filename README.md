@@ -1,4 +1,5 @@
 # rs-todo
+[![Rust Build Status](https://github.com/jbatch/rs-todo/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/jbatch/rs-todo/actions/workflows/rust.yml)
 
 ## Installation
 
