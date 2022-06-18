@@ -66,7 +66,7 @@ pub struct ToDoItem {
 }
 
 impl ToDoItem {
-    fn format_verbose_details(self: &Self, verbose: bool) -> String {
+    fn format_verbose_details(&self, verbose: bool) -> String {
         if !verbose {
             return "".to_string();
         }
@@ -74,9 +74,7 @@ impl ToDoItem {
         let completed_details = if let Some(d) = self.completed_date {
             format!(
                 " completed: {}",
-                d.with_timezone(&Local)
-                    .format("%Y-%m-%d %H:%M:%S")
-                    .to_string()
+                d.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S")
             )
         } else {
             "".to_string()
@@ -85,8 +83,7 @@ impl ToDoItem {
             "(created: {}{})",
             self.created_date
                 .with_timezone(&Local)
-                .format("%Y-%m-%d %H:%M:%S")
-                .to_string(),
+                .format("%Y-%m-%d %H:%M:%S"),
             completed_details
         )
     }
@@ -114,7 +111,7 @@ impl ToDoItem {
     assert_eq!(item.to_string(false), "  1. [ ] Walk the dog ");
     ```
     */
-    pub fn to_string(self: &Self, verbose: bool) -> String {
+    pub fn to_string(&self, verbose: bool) -> String {
         let padded_id = format!("{}.", self.id);
         let done = if self.done { "X" } else { " " };
         let verbose_details = self.format_verbose_details(verbose);
@@ -181,7 +178,7 @@ fn create_storage_file(path: PathBuf) {
 fn handle_init() {
     let storage_dir_path = dirs::home_dir().unwrap().join(".todo");
     println!("path: {}", storage_dir_path.display());
-    let storage_file_path = storage_dir_path.clone().join("todo.txt");
+    let storage_file_path = storage_dir_path.join("todo.txt");
     let create_dir_result = fs::create_dir(storage_dir_path);
     match create_dir_result {
         Ok(()) => create_storage_file(storage_file_path),
