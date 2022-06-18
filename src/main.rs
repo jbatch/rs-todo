@@ -1,6 +1,5 @@
 use chrono::prelude::*;
-use chrono::serde::ts_seconds;
-use chrono::serde::ts_seconds_option;
+use chrono::serde::{ts_seconds, ts_seconds_option};
 use clap::{Parser, Subcommand};
 use serde_derive::{Deserialize, Serialize};
 use std::{
@@ -40,20 +39,63 @@ enum Command {
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Name of the person to greet
+    /// Command to run
     #[clap(subcommand)]
     command: Command,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 struct ToDoItem {
+    /// Id of the item. Used to identify which item to complete.
     id: i32,
+    /// Text describing what the thing to do is.
     text: String,
+    /// Whether the item has been completed.
     done: bool,
+    /// When the item was added to the todo list.
     #[serde(with = "ts_seconds")]
     created_date: DateTime<Utc>, // Unix date.
+    /// When the item was competed. Only present when done is `true`.
     #[serde(with = "ts_seconds_option")]
     completed_date: Option<DateTime<Utc>>, // Unix date.
+}
+
+impl ToDoItem {
+    fn format_verbose_details(self: &Self, verbose: bool) -> String {
+        if !verbose {
+            return "".to_string();
+        }
+
+        let completed_details = if let Some(d) = self.completed_date {
+            format!(
+                " completed: {}",
+                d.with_timezone(&Local)
+                    .format("%Y-%m-%d %H:%M:%S")
+                    .to_string()
+            )
+        } else {
+            "".to_string()
+        };
+        format!(
+            "(created: {}{})",
+            self.created_date
+                .with_timezone(&Local)
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string(),
+            completed_details
+        )
+    }
+
+    /// Retuns string representation of the ToDoItem
+    fn to_string(self: &Self, verbose: bool) -> String {
+        let padded_id = format!("{}.", self.id);
+        let done = if self.done { "X" } else { " " };
+        let verbose_details = self.format_verbose_details(verbose);
+        format!(
+            "{: >4} [{}] {} {}",
+            padded_id, done, self.text, verbose_details
+        )
+    }
 }
 
 fn main() {
@@ -124,36 +166,7 @@ fn handle_list(all: bool, verbose: bool) {
             let todo_list: Vec<String> = todo_list
                 .iter()
                 .filter(|i| all || !i.done)
-                .map(|i| {
-                    let formatted_id = format!("{}.", i.id);
-                    let done = if i.done { "X" } else { " " };
-                    let verbose_details = if verbose {
-                        let completed_details = if let Some(d) = i.completed_date {
-                            format!(
-                                " completed: {}",
-                                d.with_timezone(&Local)
-                                    .format("%Y-%m-%d %H:%M:%S")
-                                    .to_string()
-                            )
-                        } else {
-                            "".to_string()
-                        };
-                        format!(
-                            "(created: {}{})",
-                            i.created_date
-                                .with_timezone(&Local)
-                                .format("%Y-%m-%d %H:%M:%S")
-                                .to_string(),
-                            completed_details
-                        )
-                    } else {
-                        "".to_string()
-                    };
-                    format!(
-                        "{: >4} [{}] {} {}",
-                        formatted_id, done, i.text, verbose_details
-                    )
-                })
+                .map(|i| i.to_string(verbose))
                 .collect();
             println!("TODO List\n");
             for item in todo_list {
